@@ -187,7 +187,9 @@ function ShuttleTruck() {
     if (!ref.current) return
     const t = (Math.sin(clock.elapsedTime * 0.35) + 1) / 2
     ref.current.position.x = -3 + t * 5
-    ref.current.rotation.y = Math.sin(clock.elapsedTime * 0.35) >= 0 ? 0 : Math.PI
+    // face the direction of travel (the derivative of position, not position itself)
+    const movingPositiveX = Math.cos(clock.elapsedTime * 0.35) >= 0
+    ref.current.rotation.y = movingPositiveX ? 0 : Math.PI
   })
   return (
     <group ref={ref} position={[-3, 0, 1.4]}>
