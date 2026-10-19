@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import type { Group } from 'three'
 import type { ShapeKind } from '../data/types'
 
 interface BuildingProps {
@@ -9,18 +11,27 @@ interface BuildingProps {
 
 const EDGE = '#1f2937'
 
-function Wheels() {
+/** a wheel with a tire + hubcaps, spinning slowly for a "rolling" look */
+function TruckWheel({ x, z, radius = 0.16 }: { x: number; z: number; radius?: number }) {
+  const spin = useRef<Group>(null)
+  useFrame((_, delta) => {
+    if (spin.current) spin.current.rotation.y += delta * 6
+  })
   return (
-    <>
-      {[-0.35, 0.35].map((x) =>
-        [-0.55, 0.55].map((z) => (
-          <mesh key={`${x}-${z}`} position={[x, 0.12, z]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.12, 12]} />
-            <meshStandardMaterial color="#1e293b" />
+    <group position={[x, radius, z]} rotation={[Math.PI / 2, 0, 0]}>
+      <group ref={spin}>
+        <mesh castShadow>
+          <cylinderGeometry args={[radius, radius, radius * 0.85, 16]} />
+          <meshStandardMaterial color="#1f2937" roughness={0.9} />
+        </mesh>
+        {[1, -1].map((s) => (
+          <mesh key={s} position={[0, s * radius * 0.43, 0]}>
+            <cylinderGeometry args={[radius * 0.55, radius * 0.55, 0.01, 12]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.6} roughness={0.3} />
           </mesh>
-        )),
-      )}
-    </>
+        ))}
+      </group>
+    </group>
   )
 }
 
@@ -130,16 +141,80 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
         )
       case 'truck':
         return (
-          <group position={[0, 0.12, 0]}>
-            <mesh position={[0, 0.25, 0]} castShadow>
-              <boxGeometry args={[1.1, 0.4, 0.55]} />
+          <group>
+            {/* chassis */}
+            <mesh position={[0, 0.3, 0]}>
+              <boxGeometry args={[1.5, 0.08, 0.5]} />
+              <meshStandardMaterial color="#1f2937" />
+            </mesh>
+            {/* flatbed with raised side rails */}
+            <mesh position={[-0.2, 0.38, 0]} castShadow>
+              <boxGeometry args={[0.95, 0.08, 0.52]} />
               <meshStandardMaterial color={color} />
             </mesh>
-            <mesh position={[0.45, 0.35, 0]}>
-              <boxGeometry args={[0.35, 0.5, 0.5]} />
+            {[-0.25, 0.25].map((z) => (
+              <mesh key={z} position={[-0.2, 0.49, z]}>
+                <boxGeometry args={[0.95, 0.14, 0.03]} />
+                <meshStandardMaterial color={color} />
+              </mesh>
+            ))}
+            {/* cargo: a bundle of pipes strapped to the bed */}
+            {[-0.1, 0.05, 0.2].map((x) =>
+              [-0.1, 0.1].map((z) => (
+                <mesh key={`${x}-${z}`} position={[x, 0.46, z]} rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.07, 0.07, 0.8, 10]} />
+                  <meshStandardMaterial color="#94a3b8" />
+                </mesh>
+              )),
+            )}
+            {[-0.35, 0.05].map((x) => (
+              <mesh key={x} position={[x, 0.46, 0]}>
+                <boxGeometry args={[0.03, 0.26, 0.56]} />
+                <meshStandardMaterial color="#facc15" />
+              </mesh>
+            ))}
+            {/* cab: lower hood + upper cabin for a less box-like silhouette */}
+            <mesh position={[0.56, 0.3, 0]} castShadow>
+              <boxGeometry args={[0.28, 0.22, 0.52]} />
               <meshStandardMaterial color="#1e293b" />
             </mesh>
-            <Wheels />
+            <mesh position={[0.58, 0.58, 0]} castShadow>
+              <boxGeometry args={[0.32, 0.4, 0.5]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            {/* windshield */}
+            <mesh position={[0.745, 0.62, 0]}>
+              <boxGeometry args={[0.02, 0.24, 0.42]} />
+              <meshStandardMaterial color="#bae6fd" emissive="#bae6fd" emissiveIntensity={0.3} />
+            </mesh>
+            {/* grille + headlights */}
+            <mesh position={[0.705, 0.3, 0]}>
+              <boxGeometry args={[0.02, 0.16, 0.4]} />
+              <meshStandardMaterial color="#0f172a" />
+            </mesh>
+            {[-0.19, 0.19].map((z) => (
+              <mesh key={z} position={[0.705, 0.3, z]}>
+                <boxGeometry args={[0.03, 0.06, 0.08]} />
+                <meshStandardMaterial color="#fef9c3" emissive="#fde047" emissiveIntensity={0.8} />
+              </mesh>
+            ))}
+            {/* side mirrors */}
+            {[-0.28, 0.28].map((z) => (
+              <mesh key={z} position={[0.62, 0.63, z]}>
+                <boxGeometry args={[0.1, 0.07, 0.02]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+            ))}
+            {/* exhaust stack behind the cab */}
+            <mesh position={[0.36, 0.65, 0.22]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.3, 8]} />
+              <meshStandardMaterial color="#64748b" />
+            </mesh>
+
+            <TruckWheel x={0.42} z={0.27} />
+            <TruckWheel x={0.42} z={-0.27} />
+            <TruckWheel x={-0.5} z={0.27} />
+            <TruckWheel x={-0.5} z={-0.27} />
           </group>
         )
       case 'ship':
