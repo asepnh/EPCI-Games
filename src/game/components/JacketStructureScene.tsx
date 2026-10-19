@@ -1,7 +1,7 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Physics, RigidBody, useSpringJoint, type RapierRigidBody } from '@react-three/rapier'
-import { createRef, useMemo, useRef } from 'react'
+import { Physics, RigidBody, useRapier, useSpringJoint, type RapierRigidBody } from '@react-three/rapier'
+import { createRef, useEffect, useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import * as THREE from 'three'
 import { bays, braceSlots, joints, legMembers, TOP_JOINT_IDS, type BraceSlot, type Joint } from '../data/structural'
@@ -166,6 +166,44 @@ function findJoint(id: string) {
   return joints.find((j) => j.id === id)!
 }
 
+/**
+ * The physics bodies stay wherever they ended up after a test (toppled,
+ * swayed, etc.) - pausing the world again doesn't move them back, since
+ * the RigidBody `position` prop only sets the initial pose on mount. So
+ * when a test ends and the player goes back to 'building' (via Reset &
+ * Try Again, or re-entering the stage), snap every free joint back to its
+ * design pose and kill any residual velocity.
+ */
+function ResetOnBuildingPhase() {
+  const phase = useGameStore((s) => s.structuralTestPhase)
+  const wasBuilding = useRef(true)
+  const { step } = useRapier()
+
+  useEffect(() => {
+    if (phase === 'building' && !wasBuilding.current) {
+      for (const j of joints) {
+        if (j.anchored) continue
+        const body = jointBodyRefs[j.id]?.current
+        if (!body) continue
+        body.setTranslation({ x: j.x, y: j.y, z: 0 }, true)
+        body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true)
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      }
+      // the physics bodies are now back at their design pose, but the
+      // visual meshes only get copied over from inside react-three-rapier's
+      // own step(), which is skipped while paused=true (which it is here,
+      // since we're back in 'building'). Call step() directly with a zero
+      // delta to force that one mesh sync without actually advancing
+      // physics time.
+      step(0)
+    }
+    wasBuilding.current = phase === 'building'
+  }, [phase, step])
+
+  return null
+}
+
 export function JacketStructureScene() {
   const structuralBraces = useGameStore((s) => s.structuralBraces)
   const structuralTestPhase = useGameStore((s) => s.structuralTestPhase)
@@ -262,6 +300,7 @@ export function JacketStructureScene() {
             )
           })}
 
+        <ResetOnBuildingPhase />
         <TestRunnerConnected />
       </Physics>
 
