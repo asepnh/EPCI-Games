@@ -3,6 +3,7 @@ import { stages } from './data/stages'
 import type { StageDef } from './data/types'
 import { assemblyTracks } from './data/construction'
 import { puzzlePieces, resolvedCells, fitsOnBarge, type Cell } from './data/packing'
+import { STICK_BUDGET, structuralFacts } from './data/structural'
 
 export type ScreenPhase = 'start' | 'stage-intro' | 'playing' | 'stage-complete' | 'finished'
 
@@ -36,6 +37,10 @@ interface GameState {
   selectedPieceId: string | null
   selectedRotation: number
 
+  /** mode: 'structural' (Engineering) */
+  structuralBraces: string[]
+  structuralTestPhase: 'building' | 'simulating' | 'passed' | 'failed'
+
   startGame: () => void
   /** jump straight into a specific stage's minigame, skipping earlier stages */
   goToStage: (stageKey: StageDef['key']) => void
@@ -53,6 +58,11 @@ interface GameState {
   placeSelectedPieceAt: (row: number, col: number) => boolean
   /** pick a placed piece back up off the barge so it can be repositioned */
   unplacePiece: (pieceId: string) => void
+
+  toggleBrace: (slotId: string) => void
+  startStabilityTest: () => void
+  reportStructuralTestResult: (passed: boolean) => void
+  resetStructuralTest: () => void
 }
 
 const emptyAssemblyProgress = { jacket: 0, topside: 0 } as const
@@ -71,6 +81,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   selectedPieceId: null,
   selectedRotation: 0,
 
+  structuralBraces: [],
+  structuralTestPhase: 'building',
+
   startGame: () =>
     set({ phase: 'stage-intro', stageIndex: 0, placements: {}, completedStageIds: [] }),
 
@@ -88,6 +101,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      structuralBraces: [],
+      structuralTestPhase: 'building',
     })
   },
 
@@ -99,6 +114,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      structuralBraces: [],
+      structuralTestPhase: 'building',
     }),
 
   selectSlot: (slotId) => set({ selectedSlotId: slotId }),
@@ -153,6 +170,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      structuralBraces: [],
+      structuralTestPhase: 'building',
     }),
 
   attemptAssemblyStep: (trackId, stepId) => {
@@ -238,6 +257,38 @@ export const useGameStore = create<GameState>((set, get) => ({
     delete next[pieceId]
     set({ packingPlacements: next, selectedPieceId: pieceId, selectedRotation: 0 })
   },
+
+  toggleBrace: (slotId) => {
+    const { structuralBraces, structuralTestPhase } = get()
+    if (structuralTestPhase !== 'building') return
+    if (structuralBraces.includes(slotId)) {
+      set({ structuralBraces: structuralBraces.filter((id) => id !== slotId) })
+    } else {
+      if (structuralBraces.length >= STICK_BUDGET) return
+      set({ structuralBraces: [...structuralBraces, slotId] })
+    }
+  },
+
+  startStabilityTest: () => {
+    if (get().structuralTestPhase !== 'building') return
+    set({ structuralTestPhase: 'simulating' })
+  },
+
+  reportStructuralTestResult: (passed) => {
+    if (passed) {
+      const stage = stages[get().stageIndex]
+      set((s) => ({
+        structuralTestPhase: 'passed',
+        activeFact: { itemName: 'Stability Test', fact: structuralFacts.pass, correct: true },
+        phase: 'stage-complete',
+        completedStageIds: [...new Set([...s.completedStageIds, stage.id])],
+      }))
+    } else {
+      set({ structuralTestPhase: 'failed' })
+    }
+  },
+
+  resetStructuralTest: () => set({ structuralTestPhase: 'building' }),
 }))
 
 export function stageProgress(

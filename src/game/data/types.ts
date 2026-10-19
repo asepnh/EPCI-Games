@@ -56,10 +56,11 @@ export interface StageDef {
   accentColor: string
   /**
    * 'place' - the classic click-a-pad / pick-from-palette matching game (uses slots+palette+gridSize)
+   * 'structural' - stick-and-joint jacket builder with real physics (Engineering)
    * 'assembly' - sequential build-in-order puzzle (Construction)
    * 'packing' - tetris-style barge loading puzzle (Installation)
    */
-  mode: 'place' | 'assembly' | 'packing'
+  mode: 'place' | 'structural' | 'assembly' | 'packing'
   gridSize?: number
   slots?: PlacementSlot[]
   /** full palette offered to the player, includes correct items + a couple of decoys */

@@ -6,78 +6,14 @@ export const stages: StageDef[] = [
     key: 'engineering',
     order: 0,
     title: '1. Engineering',
-    subtitle: 'Design it before you build it',
+    subtitle: 'Design a jacket that can take a hit',
     narrative:
-      "Welcome to the Engineering Office! Before anyone picks up a tool, engineers design the entire oil & gas facility on computers. They decide how the process works, how pipes connect, how strong the steel must be, and how the electrics are wired. Fill the office with the design teams to finish the blueprints.",
+      "Welcome to the structural test lab! Before anyone cuts real steel, engineers test a scale model to make sure the jacket design can resist ocean waves and currents - not just hold itself up on a calm day. The legs are already built. Add bracing where it matters, then put your design through a wave test.",
     wrapUp:
-      "Great work! The blueprints are finished. Every pipe, pump and beam has been designed and checked. Now Procurement can order the real equipment that matches these drawings.",
+      "The jacket design holds firm under load! Every brace you placed does real structural work - that's exactly how real engineers prove a design before a single real beam is cut. Now Procurement can order the steel that matches this proven design.",
     groundColor: '#dfe7f5',
     accentColor: '#3b82f6',
-    mode: 'place',
-    gridSize: 5,
-    slots: [
-      { id: 'e1', pos: [1, 1], label: 'Process Design', requiredItemId: 'process-desk' },
-      { id: 'e2', pos: [3, 1], label: 'Piping & Plant Layout', requiredItemId: 'piping-desk' },
-      { id: 'e3', pos: [1, 3], label: 'Structural Design', requiredItemId: 'structural-desk' },
-      { id: 'e4', pos: [3, 3], label: 'Electrical & Instrumentation', requiredItemId: 'electrical-desk' },
-      { id: 'e5', pos: [2, 2], label: 'Design Review Room', requiredItemId: 'review-table' },
-    ],
-    palette: [
-      {
-        id: 'process-desk',
-        name: 'Process Engineer Desk',
-        shape: 'desk',
-        color: '#60a5fa',
-        fact:
-          'Process engineers decide how oil and gas flow through the plant: what gets separated, cleaned, cooled or compressed, and in what order.',
-      },
-      {
-        id: 'piping-desk',
-        name: 'Piping Design Desk',
-        shape: 'blueprint',
-        color: '#38bdf8',
-        fact:
-          'Piping engineers draw every pipe in 3D so none of them crash into each other, and so pipes can be inspected and maintained later.',
-      },
-      {
-        id: 'structural-desk',
-        name: 'Structural Design Desk',
-        shape: 'desk',
-        color: '#818cf8',
-        fact:
-          'Structural engineers calculate how strong the steel frames, decks and platforms must be to hold everything up safely - even in storms.',
-      },
-      {
-        id: 'electrical-desk',
-        name: 'Electrical & I&C Desk',
-        shape: 'monitor',
-        color: '#2dd4bf',
-        fact:
-          'Electrical and instrumentation engineers design the cables, sensors and control systems that let operators run the plant safely from a control room.',
-      },
-      {
-        id: 'review-table',
-        name: '3D Model Review Table',
-        shape: 'server',
-        color: '#a78bfa',
-        fact:
-          'Before anything is built, the whole team reviews a 3D computer model together to catch mistakes early - fixing a drawing is much cheaper than fixing a finished pipe!',
-      },
-      {
-        id: 'coffee-cart',
-        name: 'Coffee Cart',
-        shape: 'crate',
-        color: '#f59e0b',
-        fact: "Nice try - engineers do love coffee, but this won't help finish the blueprints!",
-      },
-      {
-        id: 'crane-decoy',
-        name: 'Mobile Crane',
-        shape: 'crane',
-        color: '#f97316',
-        fact: 'Cranes are for the Construction yard, not the design office. Try again!',
-      },
-    ],
+    mode: 'structural',
   },
   {
     id: 'procurement',

@@ -2,12 +2,14 @@ import { IsometricScene } from './game/components/IsometricScene'
 import { assemblyTracks } from './game/data/construction'
 import { puzzlePieces } from './game/data/packing'
 import { stages } from './game/data/stages'
+import { STICK_BUDGET } from './game/data/structural'
 import { stageProgress, useGameStore } from './game/store'
 import { AssemblyGame } from './game/ui/AssemblyGame'
 import { FactPopup } from './game/ui/FactPopup'
 import { FinishedScreen } from './game/ui/FinishedScreen'
 import { Hud } from './game/ui/Hud'
 import { ItemPalette } from './game/ui/ItemPalette'
+import { JacketBuilderGame } from './game/ui/JacketBuilderGame'
 import { OverviewHome } from './game/ui/OverviewHome'
 import { PackingGame } from './game/ui/PackingGame'
 import { StageComplete } from './game/ui/StageComplete'
@@ -25,6 +27,7 @@ function App() {
   const assemblyProgress = useGameStore((s) => s.assemblyProgress)
   const packingPlacements = useGameStore((s) => s.packingPlacements)
   const completedStageIds = useGameStore((s) => s.completedStageIds)
+  const structuralBraces = useGameStore((s) => s.structuralBraces)
 
   const stage = stages[stageIndex]
 
@@ -39,6 +42,9 @@ function App() {
   } else if (stage.mode === 'packing') {
     total = puzzlePieces.length
     done = Object.keys(packingPlacements).length
+  } else if (stage.mode === 'structural') {
+    total = STICK_BUDGET
+    done = structuralBraces.length
   } else {
     ;({ done, total } = stageProgress(placements, stage.id, stage.slots?.length ?? 0))
   }
@@ -59,6 +65,7 @@ function App() {
 
       {stage.mode === 'assembly' && <AssemblyGame />}
       {stage.mode === 'packing' && <PackingGame />}
+      {stage.mode === 'structural' && <JacketBuilderGame />}
 
       {phase !== 'stage-intro' && (
         <Hud stage={stage} done={done} total={total} completedStageIds={completedStageIds} />

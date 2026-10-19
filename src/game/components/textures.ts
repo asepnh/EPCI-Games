@@ -119,3 +119,44 @@ export function makeWaterTexture(repeat = 7) {
 
   return finish(canvas, repeat)
 }
+
+export function makeBlueprintTexture(repeat = 1) {
+  const size = 512
+  const { canvas, ctx } = makeCanvas(size)
+  ctx.fillStyle = '#1e4e8c'
+  ctx.fillRect(0, 0, size, size)
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+  ctx.lineWidth = 1
+  const minor = 16
+  for (let x = 0; x <= size; x += minor) {
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, size)
+    ctx.stroke()
+  }
+  for (let y = 0; y <= size; y += minor) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(size, y)
+    ctx.stroke()
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+  ctx.lineWidth = 1.5
+  const major = 64
+  for (let x = 0; x <= size; x += major) {
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, size)
+    ctx.stroke()
+  }
+  for (let y = 0; y <= size; y += major) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(size, y)
+    ctx.stroke()
+  }
+
+  return finish(canvas, repeat)
+}
