@@ -50,12 +50,18 @@ export interface StageDef {
   subtitle: string
   /** shown on the intro card before the stage starts */
   narrative: string
-  /** shown after all slots are filled */
+  /** shown after all slots are filled / the minigame is complete */
   wrapUp: string
   groundColor: string
-  gridSize: number
-  slots: PlacementSlot[]
-  /** full palette offered to the player, includes correct items + a couple of decoys */
-  palette: ItemDef[]
   accentColor: string
+  /**
+   * 'place' - the classic click-a-pad / pick-from-palette matching game (uses slots+palette+gridSize)
+   * 'assembly' - sequential build-in-order puzzle (Construction)
+   * 'packing' - tetris-style barge loading puzzle (Installation)
+   */
+  mode: 'place' | 'assembly' | 'packing'
+  gridSize?: number
+  slots?: PlacementSlot[]
+  /** full palette offered to the player, includes correct items + a couple of decoys */
+  palette?: ItemDef[]
 }

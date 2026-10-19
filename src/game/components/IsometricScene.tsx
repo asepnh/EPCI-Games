@@ -21,7 +21,7 @@ function toWorld(pos: [number, number], gridSize: number): [number, number] {
 }
 
 function Ground({ stage }: { stage: StageDef }) {
-  const size = stage.gridSize * TILE + 1.2
+  const size = (stage.gridSize ?? 5) * TILE + 1.2
   const isWater = stage.key === 'installation'
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -48,13 +48,13 @@ function SlotPad({
   selected,
   onSelect,
 }: {
-  slot: StageDef['slots'][number]
+  slot: NonNullable<StageDef['slots']>[number]
   stage: StageDef
   filled: string | undefined
   selected: boolean
   onSelect: () => void
 }) {
-  const [x, z] = toWorld(slot.pos, stage.gridSize)
+  const [x, z] = toWorld(slot.pos, stage.gridSize ?? 5)
   const item = filled ? getPaletteItem(stage, filled) : undefined
 
   return (
@@ -87,7 +87,7 @@ function SlotPad({
 }
 
 export function IsometricScene({ stage, placements, selectedSlotId, onSelectSlot }: IsometricSceneProps) {
-  const camDistance = useMemo(() => 7 + stage.gridSize * 0.4, [stage.gridSize])
+  const camDistance = useMemo(() => 7 + (stage.gridSize ?? 5) * 0.4, [stage.gridSize])
 
   return (
     <Canvas shadows dpr={[1, 1.5]} camera={{ fov: 32, position: [camDistance, camDistance * 0.9, camDistance] }}>
@@ -101,8 +101,8 @@ export function IsometricScene({ stage, placements, selectedSlotId, onSelectSlot
         shadow-mapSize-height={1024}
       />
       <Ground stage={stage} />
-      <GridLines gridSize={stage.gridSize} />
-      {stage.slots.map((slot) => (
+      <GridLines gridSize={stage.gridSize ?? 5} />
+      {(stage.slots ?? []).map((slot) => (
         <SlotPad
           key={slot.id}
           slot={slot}

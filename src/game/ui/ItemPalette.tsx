@@ -30,7 +30,7 @@ const SHAPE_ICON: Record<ShapeKind, string> = {
 export function ItemPalette({ stage, slotId }: { stage: StageDef; slotId: string }) {
   const placeItem = useGameStore((s) => s.placeItem)
   const selectSlot = useGameStore((s) => s.selectSlot)
-  const slot = stage.slots.find((s) => s.id === slotId)!
+  const slot = stage.slots?.find((s) => s.id === slotId)!
 
   return (
     <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center z-10">
@@ -44,7 +44,7 @@ export function ItemPalette({ stage, slotId }: { stage: StageDef; slotId: string
           </button>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-          {stage.palette.map((item) => (
+          {(stage.palette ?? []).map((item) => (
             <button
               key={item.id}
               onClick={() => placeItem(item.id)}
