@@ -176,11 +176,11 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
             {/* cab: lower hood + upper cabin for a less box-like silhouette */}
             <mesh position={[0.56, 0.3, 0]} castShadow>
               <boxGeometry args={[0.28, 0.22, 0.52]} />
-              <meshStandardMaterial color="#1e293b" />
+              <meshStandardMaterial color="#1d4ed8" />
             </mesh>
             <mesh position={[0.58, 0.58, 0]} castShadow>
               <boxGeometry args={[0.32, 0.4, 0.5]} />
-              <meshStandardMaterial color="#1e293b" />
+              <meshStandardMaterial color="#1d4ed8" />
             </mesh>
             {/* windshield */}
             <mesh position={[0.745, 0.62, 0]}>
