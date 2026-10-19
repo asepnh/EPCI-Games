@@ -10,7 +10,7 @@ export interface PuzzlePiece {
 }
 
 export const BARGE_ROWS = 3
-export const BARGE_COLS = 8
+export const BARGE_COLS = 6
 
 export const puzzlePieces: PuzzlePiece[] = [
   {
