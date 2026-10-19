@@ -1,3 +1,5 @@
+import type { StageDef } from './types'
+
 export interface OverviewZone {
   id: string
   title: string
@@ -8,6 +10,8 @@ export interface OverviewZone {
   center: [number, number]
   /** footprint size, used for the hover hit-box and highlight */
   size: [number, number]
+  /** clicking this zone jumps straight into this stage's minigame */
+  stageKey: StageDef['key']
 }
 
 export const overviewZones: OverviewZone[] = [
@@ -19,6 +23,7 @@ export const overviewZones: OverviewZone[] = [
     accentColor: '#3b82f6',
     center: [-9, 0],
     size: [5.5, 5.5],
+    stageKey: 'engineering',
   },
   {
     id: 'manufacturing',
@@ -28,6 +33,7 @@ export const overviewZones: OverviewZone[] = [
     accentColor: '#16a34a',
     center: [-3.5, 0],
     size: [5.5, 5.5],
+    stageKey: 'procurement',
   },
   {
     id: 'fabrication',
@@ -37,6 +43,7 @@ export const overviewZones: OverviewZone[] = [
     accentColor: '#d97706',
     center: [2.5, 0],
     size: [6.5, 6.5],
+    stageKey: 'construction',
   },
   {
     id: 'loadout',
@@ -46,6 +53,7 @@ export const overviewZones: OverviewZone[] = [
     accentColor: '#0ea5e9',
     center: [8.5, 0],
     size: [4.5, 5.5],
+    stageKey: 'installation',
   },
   {
     id: 'offshore',
@@ -55,5 +63,6 @@ export const overviewZones: OverviewZone[] = [
     accentColor: '#0369a1',
     center: [15, 0],
     size: [6.5, 6.5],
+    stageKey: 'installation',
   },
 ]

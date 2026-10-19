@@ -5,9 +5,10 @@ interface HudProps {
   stage: StageDef
   done: number
   total: number
+  completedStageIds: string[]
 }
 
-export function Hud({ stage, done, total }: HudProps) {
+export function Hud({ stage, done, total, completedStageIds }: HudProps) {
   return (
     <div className="absolute top-0 left-0 right-0 p-4 flex flex-col sm:flex-row sm:items-center gap-3 pointer-events-none">
       <div className="bg-slate-900/85 text-white rounded-xl px-4 py-2.5 shadow-lg pointer-events-auto">
@@ -27,7 +28,12 @@ export function Hud({ stage, done, total }: HudProps) {
             <div
               className="h-full rounded-full transition-all"
               style={{
-                width: s.id === stage.id ? `${(done / total) * 100}%` : s.order < stage.order ? '100%' : '0%',
+                width:
+                  s.id === stage.id
+                    ? `${(done / total) * 100}%`
+                    : completedStageIds.includes(s.id)
+                      ? '100%'
+                      : '0%',
                 background: s.accentColor,
               }}
             />

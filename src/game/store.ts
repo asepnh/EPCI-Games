@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { stages } from './data/stages'
+import type { StageDef } from './data/types'
 import { assemblyTracks } from './data/construction'
 import { puzzlePieces, resolvedCells, fitsOnBarge, type Cell } from './data/packing'
 
@@ -24,6 +25,8 @@ interface GameState {
   placements: Record<string, Record<string, string>>
   selectedSlotId: string | null
   activeFact: FactPopup | null
+  /** stage ids actually finished this session, so the Hud doesn't claim a jumped-past stage is done */
+  completedStageIds: string[]
 
   /** mode: 'assembly' (Construction) - steps completed per track */
   assemblyProgress: Record<'jacket' | 'topside', number>
@@ -34,6 +37,8 @@ interface GameState {
   selectedRotation: number
 
   startGame: () => void
+  /** jump straight into a specific stage's minigame, skipping earlier stages */
+  goToStage: (stageKey: StageDef['key']) => void
   beginStage: () => void
   selectSlot: (slotId: string | null) => void
   placeItem: (itemId: string) => void
@@ -56,6 +61,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   placements: {},
   selectedSlotId: null,
   activeFact: null,
+  completedStageIds: [],
 
   assemblyProgress: { ...emptyAssemblyProgress },
 
@@ -63,7 +69,25 @@ export const useGameStore = create<GameState>((set, get) => ({
   selectedPieceId: null,
   selectedRotation: 0,
 
-  startGame: () => set({ phase: 'stage-intro', stageIndex: 0, placements: {} }),
+  startGame: () =>
+    set({ phase: 'stage-intro', stageIndex: 0, placements: {}, completedStageIds: [] }),
+
+  goToStage: (stageKey) => {
+    const stageIndex = stages.findIndex((s) => s.key === stageKey)
+    if (stageIndex === -1) return
+    set({
+      phase: 'stage-intro',
+      stageIndex,
+      placements: {},
+      selectedSlotId: null,
+      activeFact: null,
+      completedStageIds: [],
+      assemblyProgress: { ...emptyAssemblyProgress },
+      packingPlacements: {},
+      selectedPieceId: null,
+      selectedRotation: 0,
+    })
+  },
 
   beginStage: () =>
     set({
@@ -95,12 +119,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const allDone = correct && (stage.slots ?? []).every((s) => stagePlacements[s.id] !== undefined)
 
-    set({
+    set((s) => ({
       placements: { ...placements, [stage.id]: stagePlacements },
       selectedSlotId: null,
       activeFact: { itemName: item.name, fact: item.fact, correct },
       phase: allDone ? 'stage-complete' : 'playing',
-    })
+      completedStageIds: allDone ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
+    }))
   },
 
   dismissFact: () => set({ activeFact: null }),
@@ -121,6 +146,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       placements: {},
       selectedSlotId: null,
       activeFact: null,
+      completedStageIds: [],
       assemblyProgress: { ...emptyAssemblyProgress },
       packingPlacements: {},
       selectedPieceId: null,
@@ -152,12 +178,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     const step = track.steps[stepIndex]
     const nextProgress = { ...assemblyProgress, [trackId]: currentProgress + 1 }
     const allDone = assemblyTracks.every((t) => nextProgress[t.id] === t.steps.length)
+    const stage = stages[get().stageIndex]
 
-    set({
+    set((s) => ({
       assemblyProgress: nextProgress,
       activeFact: { itemName: step.name, fact: step.fact, correct: true },
       phase: allDone ? 'stage-complete' : 'playing',
-    })
+      completedStageIds: allDone ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
+    }))
   },
 
   selectPiece: (pieceId) => set({ selectedPieceId: pieceId, selectedRotation: 0 }),
@@ -188,14 +216,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       [selectedPieceId]: { rotation: selectedRotation, anchorRow: row, anchorCol: col },
     }
     const allPlaced = puzzlePieces.every((p) => nextPlacements[p.id] !== undefined)
+    const stage = stages[get().stageIndex]
 
-    set({
+    set((s) => ({
       packingPlacements: nextPlacements,
       selectedPieceId: null,
       selectedRotation: 0,
       activeFact: { itemName: piece.name, fact: piece.fact, correct: true },
       phase: allPlaced ? 'stage-complete' : 'playing',
-    })
+      completedStageIds: allPlaced ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
+    }))
     return true
   },
 }))

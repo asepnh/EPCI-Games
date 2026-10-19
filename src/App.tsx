@@ -24,6 +24,7 @@ function App() {
   const activeFact = useGameStore((s) => s.activeFact)
   const assemblyProgress = useGameStore((s) => s.assemblyProgress)
   const packingPlacements = useGameStore((s) => s.packingPlacements)
+  const completedStageIds = useGameStore((s) => s.completedStageIds)
 
   const stage = stages[stageIndex]
 
@@ -59,7 +60,9 @@ function App() {
       {stage.mode === 'assembly' && <AssemblyGame />}
       {stage.mode === 'packing' && <PackingGame />}
 
-      {phase !== 'stage-intro' && <Hud stage={stage} done={done} total={total} />}
+      {phase !== 'stage-intro' && (
+        <Hud stage={stage} done={done} total={total} completedStageIds={completedStageIds} />
+      )}
 
       {phase === 'stage-intro' && <StageIntro stage={stage} />}
 
