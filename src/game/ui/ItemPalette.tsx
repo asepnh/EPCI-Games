@@ -22,6 +22,9 @@ const SHAPE_ICON: Record<ShapeKind, string> = {
   flare: '🔥',
   platformDeck: '🏭',
   pipeline: '➰',
+  office: '🏢',
+  warehouse: '🏬',
+  vessel: '🚤',
 }
 
 export function ItemPalette({ stage, slotId }: { stage: StageDef; slotId: string }) {

@@ -5,9 +5,9 @@ import { FactPopup } from './game/ui/FactPopup'
 import { FinishedScreen } from './game/ui/FinishedScreen'
 import { Hud } from './game/ui/Hud'
 import { ItemPalette } from './game/ui/ItemPalette'
+import { OverviewHome } from './game/ui/OverviewHome'
 import { StageComplete } from './game/ui/StageComplete'
 import { StageIntro } from './game/ui/StageIntro'
-import { StartScreen } from './game/ui/StartScreen'
 
 function App() {
   const phase = useGameStore((s) => s.phase)
@@ -19,7 +19,7 @@ function App() {
 
   const stage = stages[stageIndex]
 
-  if (phase === 'start') return <StartScreen />
+  if (phase === 'start') return <OverviewHome />
   if (phase === 'finished') return <FinishedScreen />
 
   const stagePlacements = placements[stage.id] ?? {}

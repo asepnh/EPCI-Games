@@ -334,6 +334,69 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
             ))}
           </group>
         )
+      case 'office':
+        return (
+          <group>
+            <mesh position={[0, 0.6, 0]} castShadow>
+              <boxGeometry args={[1.3, 1.2, 1]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+            <mesh position={[0, 1.28, 0]}>
+              <boxGeometry args={[1.4, 0.16, 1.1]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            {[-0.4, 0, 0.4].map((x) => (
+              <mesh key={x} position={[x, 0.65, 0.51]}>
+                <boxGeometry args={[0.22, 0.3, 0.02]} />
+                <meshStandardMaterial color="#bae6fd" emissive="#bae6fd" emissiveIntensity={0.4} />
+              </mesh>
+            ))}
+          </group>
+        )
+      case 'warehouse':
+        return (
+          <group>
+            <mesh position={[0, 0.45, 0]} castShadow>
+              <boxGeometry args={[2, 0.9, 1.3]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+            {[-0.7, -0.3, 0.1, 0.5].map((x) => (
+              <mesh key={x} position={[x, 0.92, 0]}>
+                <boxGeometry args={[0.3, 0.06, 1.32]} />
+                <meshStandardMaterial color="#94a3b8" />
+              </mesh>
+            ))}
+            <mesh position={[0.85, 0.35, 0]}>
+              <boxGeometry args={[0.3, 0.7, 0.8]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+          </group>
+        )
+      case 'vessel':
+        return (
+          <group position={[0, 0.1, 0]}>
+            <mesh position={[0, 0.18, 0]} castShadow>
+              <boxGeometry args={[2.2, 0.36, 0.9]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+            <mesh position={[-0.7, 0.5, 0]}>
+              <boxGeometry args={[0.5, 0.5, 0.7]} />
+              <meshStandardMaterial color="#e2e8f0" />
+            </mesh>
+            <mesh position={[0.3, 1.1, 0]}>
+              <cylinderGeometry args={[0.07, 0.07, 1.4, 8]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0.3, 1.75, 0.35]}>
+              <boxGeometry args={[0.08, 0.08, 0.9]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0.3, 1.3, 0.6]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.9, 6]} />
+              <meshStandardMaterial color="#111827" />
+            </mesh>
+          </group>
+        )
       default:
         return (
           <mesh position={[0, 0.3, 0]}>

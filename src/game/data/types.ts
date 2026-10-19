@@ -19,6 +19,9 @@ export type ShapeKind =
   | 'flare'
   | 'platformDeck'
   | 'pipeline'
+  | 'office'
+  | 'warehouse'
+  | 'vessel'
 
 export interface ItemDef {
   id: string
