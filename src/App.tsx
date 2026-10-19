@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { IsometricScene } from './game/components/IsometricScene'
 import { assemblyTracks } from './game/data/construction'
 import { puzzlePieces } from './game/data/packing'
@@ -28,6 +29,27 @@ function App() {
   const packingPlacements = useGameStore((s) => s.packingPlacements)
   const completedStageIds = useGameStore((s) => s.completedStageIds)
   const structuralBraces = useGameStore((s) => s.structuralBraces)
+
+  // keep the browser/device back button inside the game: pushing a history
+  // entry when a stage starts means "back" pops that entry (and fires
+  // popstate below) instead of leaving the site entirely
+  const prevPhaseRef = useRef(phase)
+  useEffect(() => {
+    if (prevPhaseRef.current === 'start' && phase !== 'start') {
+      window.history.pushState({ epciGame: true }, '')
+    }
+    prevPhaseRef.current = phase
+  }, [phase])
+
+  useEffect(() => {
+    function onPopState() {
+      if (useGameStore.getState().phase !== 'start') {
+        useGameStore.getState().restart()
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   const stage = stages[stageIndex]
 
