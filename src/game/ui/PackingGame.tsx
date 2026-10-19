@@ -8,26 +8,28 @@ import {
   resolvedCells,
   type PuzzlePiece,
 } from '../data/packing'
+import { PieceIcon } from '../components/PieceIcon'
 import { useGameStore } from '../store'
 
-function ShapePreview({ cells, color, cellPx = 14 }: { cells: [number, number][]; color: string; cellPx?: number }) {
-  const maxRow = Math.max(...cells.map(([r]) => r))
-  const maxCol = Math.max(...cells.map(([, c]) => c))
-  const set = new Set(cells.map(([r, c]) => `${r},${c}`))
+const CELL_PX = 48
+
+function boundingBox(cells: [number, number][]) {
+  const rows = cells.map(([r]) => r)
+  const cols = cells.map(([, c]) => c)
+  const minRow = Math.min(...rows)
+  const minCol = Math.min(...cols)
+  return { minRow, minCol, w: Math.max(...cols) - minCol + 1, h: Math.max(...rows) - minRow + 1 }
+}
+
+function ShapePreview({ piece, cells }: { piece: PuzzlePiece; cells: [number, number][] }) {
+  const { w, h } = boundingBox(cells)
+  const px = 12
   return (
     <div
-      className="grid gap-[2px]"
-      style={{ gridTemplateColumns: `repeat(${maxCol + 1}, ${cellPx}px)`, gridTemplateRows: `repeat(${maxRow + 1}, ${cellPx}px)` }}
+      className="rounded-[3px] flex items-center justify-center"
+      style={{ width: w * px, height: h * px, background: piece.color }}
     >
-      {Array.from({ length: maxRow + 1 }).flatMap((_, r) =>
-        Array.from({ length: maxCol + 1 }).map((_, c) => (
-          <div
-            key={`${r}-${c}`}
-            style={{ background: set.has(`${r},${c}`) ? color : 'transparent' }}
-            className="rounded-[2px]"
-          />
-        )),
-      )}
+      <PieceIcon pieceId={piece.id} w={w} h={h} />
     </div>
   )
 }
@@ -48,8 +50,8 @@ function PieceCard({ piece }: { piece: PuzzlePiece }) {
       }`}
     >
       <button onClick={() => selectPiece(isSelected ? null : piece.id)} className="flex flex-col items-center gap-1.5">
-        <div className="w-14 h-14 flex items-center justify-center">
-          <ShapePreview cells={cells} color={piece.color} />
+        <div className="w-16 h-14 flex items-center justify-center">
+          <ShapePreview piece={piece} cells={cells} />
         </div>
         <span className="text-[11px] text-center leading-tight text-white">{piece.name}</span>
       </button>
@@ -71,6 +73,7 @@ export function PackingGame() {
   const selectedRotation = useGameStore((s) => s.selectedRotation)
   const placeSelectedPieceAt = useGameStore((s) => s.placeSelectedPieceAt)
   const selectPiece = useGameStore((s) => s.selectPiece)
+  const unplacePiece = useGameStore((s) => s.unplacePiece)
   const [hoverCell, setHoverCell] = useState<[number, number] | null>(null)
   const [invalidFlash, setInvalidFlash] = useState(false)
 
@@ -96,38 +99,36 @@ export function PackingGame() {
     return { cells, valid: fitsOnBarge(cells, occSet) }
   }, [selectedPiece, selectedRotation, hoverCell, occupied])
 
-  const previewSet = previewCells
-    ? new Set(previewCells.cells.map(([r, c]) => `${r},${c}`))
-    : null
+  const previewSet = previewCells ? new Set(previewCells.cells.map(([r, c]) => `${r},${c}`)) : null
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-sky-200 to-sky-300 p-4">
       <div className="max-w-3xl w-full space-y-5">
         <div className="text-center">
           <p className="text-sm text-slate-700 font-medium">
-            Load every piece onto the barge deck - nothing can overlap or hang off the edge.
+            Load every piece onto the barge deck - nothing can overlap or hang off the edge. Tap a loaded
+            piece to pick it back up.
           </p>
         </div>
 
         <div className="flex justify-center">
           <div
-            className="inline-grid gap-1 p-3 rounded-2xl bg-sky-800 shadow-2xl"
-            style={{ gridTemplateColumns: `repeat(${BARGE_COLS}, 56px)`, gridTemplateRows: `repeat(${BARGE_ROWS}, 56px)` }}
+            className="relative inline-grid gap-1 p-3 rounded-2xl bg-sky-800 shadow-2xl"
+            style={{
+              gridTemplateColumns: `repeat(${BARGE_COLS}, ${CELL_PX}px)`,
+              gridTemplateRows: `repeat(${BARGE_ROWS}, ${CELL_PX}px)`,
+            }}
             onMouseLeave={() => setHoverCell(null)}
           >
             {Array.from({ length: BARGE_ROWS }).flatMap((_, r) =>
               Array.from({ length: BARGE_COLS }).map((_, c) => {
                 const key = `${r},${c}`
-                const occupantId = occupied.get(key)
-                const occupant = occupantId ? puzzlePieces.find((p) => p.id === occupantId) : null
+                const occupied_ = occupied.has(key)
                 const inPreview = previewSet?.has(key)
 
                 let bg = '#7dc4e8'
-                let border = '1px solid rgba(255,255,255,0.25)'
-                if (occupant) {
-                  bg = occupant.color
-                  border = '1px solid rgba(0,0,0,0.25)'
-                } else if (inPreview) {
+                const border = '1px solid rgba(255,255,255,0.25)'
+                if (!occupied_ && inPreview) {
                   bg = previewCells?.valid ? 'rgba(74,222,128,0.65)' : 'rgba(248,113,113,0.65)'
                 }
 
@@ -136,7 +137,7 @@ export function PackingGame() {
                     key={key}
                     onMouseEnter={() => selectedPiece && setHoverCell([r, c])}
                     onClick={() => {
-                      if (!selectedPiece) return
+                      if (!selectedPiece || occupied_) return
                       const ok = placeSelectedPieceAt(r, c)
                       if (!ok) {
                         setInvalidFlash(true)
@@ -146,11 +147,40 @@ export function PackingGame() {
                       }
                     }}
                     className="rounded-sm transition-colors"
-                    style={{ background: bg, border, cursor: selectedPiece ? 'pointer' : 'default' }}
+                    style={{
+                      background: bg,
+                      border,
+                      cursor: selectedPiece && !occupied_ ? 'pointer' : 'default',
+                      gridRow: r + 1,
+                      gridColumn: c + 1,
+                    }}
                   />
                 )
               }),
             )}
+
+            {Object.entries(packingPlacements).map(([id, placement]) => {
+              const piece = puzzlePieces.find((p) => p.id === id)
+              if (!piece) return null
+              const cells = resolvedCells(piece, placement.rotation, placement.anchorRow, placement.anchorCol)
+              const { minRow, minCol, w, h } = boundingBox(cells)
+              return (
+                <button
+                  key={id}
+                  onClick={() => unplacePiece(id)}
+                  title={`Pick ${piece.name} back up`}
+                  className="rounded-sm flex items-center justify-center cursor-pointer hover:brightness-110 transition"
+                  style={{
+                    gridRow: `${minRow + 1} / span ${h}`,
+                    gridColumn: `${minCol + 1} / span ${w}`,
+                    background: piece.color,
+                    border: '1px solid rgba(0,0,0,0.25)',
+                  }}
+                >
+                  <PieceIcon pieceId={piece.id} w={w} h={h} />
+                </button>
+              )
+            })}
           </div>
         </div>
 

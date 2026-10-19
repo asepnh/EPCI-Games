@@ -10,7 +10,7 @@ export interface PuzzlePiece {
 }
 
 export const BARGE_ROWS = 3
-export const BARGE_COLS = 6
+export const BARGE_COLS = 8
 
 export const puzzlePieces: PuzzlePiece[] = [
   {
@@ -20,8 +20,12 @@ export const puzzlePieces: PuzzlePiece[] = [
     cells: [
       [0, 0],
       [0, 1],
+      [0, 2],
+      [0, 3],
       [1, 0],
       [1, 1],
+      [1, 2],
+      [1, 3],
     ],
     fact: 'The jacket is the heaviest single piece on the barge. Loading crews plan around its footprint first, then fit everything else around it.',
   },
@@ -33,6 +37,7 @@ export const puzzlePieces: PuzzlePiece[] = [
       [0, 0],
       [1, 0],
       [2, 0],
+      [3, 0],
     ],
     fact: 'Piles are long steel tubes driven deep into the seabed through the jacket legs to anchor the whole platform in place.',
   },

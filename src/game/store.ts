@@ -51,6 +51,8 @@ interface GameState {
   selectPiece: (pieceId: string | null) => void
   rotateSelectedPiece: () => void
   placeSelectedPieceAt: (row: number, col: number) => boolean
+  /** pick a placed piece back up off the barge so it can be repositioned */
+  unplacePiece: (pieceId: string) => void
 }
 
 const emptyAssemblyProgress = { jacket: 0, topside: 0 } as const
@@ -227,6 +229,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       completedStageIds: allPlaced ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
     }))
     return true
+  },
+
+  unplacePiece: (pieceId) => {
+    const { packingPlacements } = get()
+    if (!packingPlacements[pieceId]) return
+    const next = { ...packingPlacements }
+    delete next[pieceId]
+    set({ packingPlacements: next, selectedPieceId: pieceId, selectedRotation: 0 })
   },
 }))
 
