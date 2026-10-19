@@ -45,7 +45,12 @@ export const puzzlePieces: PuzzlePiece[] = [
     id: 'boatlanding',
     name: 'Boat Landing',
     color: '#0ea5e9',
-    cells: [[0, 0]],
+    cells: [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ],
     fact: 'A boat landing is a small platform that lets crew boats safely tie up and transfer people onto the structure.',
   },
   {
