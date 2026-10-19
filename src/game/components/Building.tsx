@@ -164,17 +164,25 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
       case 'crane':
         return (
           <group>
-            <mesh position={[-0.3, 0.1, 0]}>
+            <mesh position={[-0.3, 0.1, 0]} castShadow>
               <boxGeometry args={[0.4, 0.2, 0.4]} />
               <meshStandardMaterial color="#334155" />
             </mesh>
-            <mesh position={[-0.3, 0.7, 0]}>
+            <mesh position={[-0.3, 0.7, 0]} castShadow>
               <cylinderGeometry args={[0.08, 0.08, 1.2, 10]} />
               <meshStandardMaterial color={color} />
             </mesh>
-            <mesh position={[0.15, 1.25, 0]}>
+            <mesh position={[-0.22, 1.1, 0]}>
+              <boxGeometry args={[0.22, 0.2, 0.2]} />
+              <meshStandardMaterial color="#bae6fd" transparent opacity={0.85} />
+            </mesh>
+            <mesh position={[0.15, 1.25, 0]} castShadow>
               <boxGeometry args={[1, 0.08, 0.08]} />
               <meshStandardMaterial color={color} />
+            </mesh>
+            <mesh position={[-0.55, 1.2, 0]}>
+              <boxGeometry args={[0.3, 0.18, 0.18]} />
+              <meshStandardMaterial color="#1e293b" />
             </mesh>
             <mesh position={[0.55, 0.95, 0]}>
               <cylinderGeometry args={[0.015, 0.015, 0.6, 6]} />
@@ -279,6 +287,20 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
               <boxGeometry args={[0.4, 0.3, 0.4]} />
               <meshStandardMaterial color="#94a3b8" />
             </mesh>
+            {[-0.74, 0.74].map((x) => (
+              <mesh key={x} position={[x, 0.24, 0]}>
+                <boxGeometry args={[0.02, 0.1, 1.02]} />
+                <meshStandardMaterial color="#1e293b" />
+              </mesh>
+            ))}
+            {[-0.6, -0.1, 0.6].map((x) =>
+              [-0.47, 0.47].map((z) => (
+                <mesh key={`${x}-${z}`} position={[x, 0.26, z]}>
+                  <cylinderGeometry args={[0.025, 0.025, 0.1, 6]} />
+                  <meshStandardMaterial color="#facc15" />
+                </mesh>
+              )),
+            )}
           </group>
         )
       case 'heliDeck':
@@ -341,16 +363,34 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
               <boxGeometry args={[1.3, 1.2, 1]} />
               <meshStandardMaterial color={color} />
             </mesh>
-            <mesh position={[0, 1.28, 0]}>
-              <boxGeometry args={[1.4, 0.16, 1.1]} />
+            <mesh position={[0, 0.6, 0.51]}>
+              <boxGeometry args={[1.32, 1.22, 0.02]} />
+              <meshBasicMaterial color={EDGE} wireframe />
+            </mesh>
+            {[-0.38, 0, 0.38].map((x) =>
+              [0.35, 0.78].map((y) => (
+                <mesh key={`${x}-${y}`} position={[x, y, 0.515]}>
+                  <boxGeometry args={[0.22, 0.26, 0.02]} />
+                  <meshStandardMaterial color="#bae6fd" emissive="#bae6fd" emissiveIntensity={0.45} />
+                </mesh>
+              )),
+            )}
+            <mesh position={[0.66, 1.1, 0]}>
+              <boxGeometry args={[0.02, 1.2, 1.02]} />
               <meshStandardMaterial color="#1e293b" />
             </mesh>
-            {[-0.4, 0, 0.4].map((x) => (
-              <mesh key={x} position={[x, 0.65, 0.51]}>
-                <boxGeometry args={[0.22, 0.3, 0.02]} />
-                <meshStandardMaterial color="#bae6fd" emissive="#bae6fd" emissiveIntensity={0.4} />
-              </mesh>
-            ))}
+            <mesh position={[-0.66, 1.1, 0]}>
+              <boxGeometry args={[0.02, 1.2, 1.02]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            <mesh position={[0, 1.26, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+              <coneGeometry args={[0.95, 0.36, 4]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0, 1.5, 0]}>
+              <cylinderGeometry args={[0.03, 0.03, 0.2, 6]} />
+              <meshStandardMaterial color="#64748b" />
+            </mesh>
           </group>
         )
       case 'warehouse':
@@ -369,6 +409,20 @@ export function Building({ shape, color, scale = 1 }: BuildingProps) {
             <mesh position={[0.85, 0.35, 0]}>
               <boxGeometry args={[0.3, 0.7, 0.8]} />
               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+            {[-0.5, 0.3].map((x) => (
+              <mesh key={x} position={[x, 1.02, 0]}>
+                <boxGeometry args={[0.18, 0.14, 0.18]} />
+                <meshStandardMaterial color="#64748b" />
+              </mesh>
+            ))}
+            <mesh position={[-1.05, 0.3, 0.3]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.6, 8]} />
+              <meshStandardMaterial color="#94a3b8" />
+            </mesh>
+            <mesh position={[-1.05, 0.3, -0.3]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.6, 8]} />
+              <meshStandardMaterial color="#94a3b8" />
             </mesh>
           </group>
         )
