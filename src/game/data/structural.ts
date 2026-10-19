@@ -58,9 +58,31 @@ export const STICK_BUDGET = 5
 
 export const TOP_JOINT_IDS = ['j3', 'j7']
 
+/**
+ * The 3 bays, each defined by its 4 corner joints. Used to measure racking:
+ * in an undeformed rectangle both diagonals (leftBottom-rightTop and
+ * rightBottom-leftTop) are the same length; a bay that racks into a
+ * parallelogram makes them diverge. This is a purely local, self-referential
+ * measure (relative distances between joints in the same bay), so it's
+ * immune to the whole structure translating/rotating as a rigid body, which
+ * is not itself a sign of structural failure.
+ */
+export interface Bay {
+  leftBottom: string
+  leftTop: string
+  rightBottom: string
+  rightTop: string
+}
+
+export const bays: Bay[] = [
+  { leftBottom: 'j0', leftTop: 'j1', rightBottom: 'j4', rightTop: 'j5' },
+  { leftBottom: 'j1', leftTop: 'j2', rightBottom: 'j5', rightTop: 'j6' },
+  { leftBottom: 'j2', leftTop: 'j3', rightBottom: 'j6', rightTop: 'j7' },
+]
+
 export const structuralFacts = {
   intro:
-    "Before any real steel is cut, engineers test a scale model to make sure the jacket won't rack or topple under wave and current loads. The legs are already up - you have 5 steel braces to add. You can't brace every bay, so choose where it matters most!",
-  pass: "Solid! Diagonal braces turn floppy rectangles into rigid triangles, so the frame resists sideways wave and current loads - even in the bays you left open, as long as the load has nowhere to go but through a triangle.",
-  fail: "That design racked under the wave load - watch which bay folded into a parallelogram. A bay with no diagonal can't resist sideways force, even though it looked solid just standing still. Add a brace there and test again.",
+    "Before any real steel is cut, engineers test a scale model to make sure the jacket won't rack or topple under wave and current loads. The legs are already up - you have exactly 5 steel braces to add. A triangle needs all three sides: each bay only locks rigid once it has both a horizontal top and a diagonal.",
+  pass: "Solid! A horizontal plus a diagonal turns a floppy rectangle into two rigid triangles, so the whole frame resists sideways wave and current loads without racking.",
+  fail: "That design racked under the wave load - watch which bay folded into a parallelogram. A diagonal alone (or a horizontal alone) still leaves a corner free to swing; only a complete triangle - both legs, the top, and a diagonal - stays rigid. Fix that bay and test again.",
 }

@@ -23,8 +23,9 @@ export function JacketBuilderGame() {
             <>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-white/70">
-                  Click an open bay to add or remove a brace. Diagonals (amber) resist sideways
-                  loads; horizontals (grey) alone don't.
+                  Click an open bay to add or remove a brace. A bay only becomes a rigid triangle
+                  once it has both a horizontal (grey) top and a diagonal (amber) - either alone
+                  still lets it rack.
                 </p>
                 <p className="shrink-0 ml-3 text-sm font-bold whitespace-nowrap">
                   {used}/{STICK_BUDGET} braces

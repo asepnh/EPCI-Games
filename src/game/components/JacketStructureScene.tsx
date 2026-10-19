@@ -4,7 +4,7 @@ import { Physics, RigidBody, useSpringJoint, type RapierRigidBody } from '@react
 import { createRef, useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import * as THREE from 'three'
-import { braceSlots, joints, legMembers, TOP_JOINT_IDS, type BraceSlot, type Joint } from '../data/structural'
+import { bays, braceSlots, joints, legMembers, TOP_JOINT_IDS, type BraceSlot, type Joint } from '../data/structural'
 import { makeBlueprintTexture } from './textures'
 import { useGameStore } from '../store'
 
@@ -86,6 +86,8 @@ function TrussMember({
   bRef,
   color,
   radius,
+  stiffness = 6000,
+  damping = 120,
 }: {
   a: Joint
   b: Joint
@@ -93,6 +95,8 @@ function TrussMember({
   bRef: RBRef
   color: string
   radius: number
+  stiffness?: number
+  damping?: number
 }) {
   const length = Math.hypot(b.x - a.x, b.y - a.y)
   const meshRef = useRef<THREE.Mesh>(null)
@@ -101,8 +105,8 @@ function TrussMember({
     [0, 0, 0],
     [0, 0, 0],
     length,
-    6000,
-    120,
+    stiffness,
+    damping,
   ])
 
   useFrame(() => {
@@ -169,7 +173,6 @@ export function JacketStructureScene() {
 
   const placedSet = useMemo(() => new Set(structuralBraces), [structuralBraces])
   const budgetFull = structuralBraces.length >= 5
-  const recordedStartRef = useRef<Map<string, THREE.Vector3>>(new Map())
 
   return (
     <Canvas shadows dpr={[1, 1.5]} camera={{ fov: 32, position: [2, 1.4, 9] }}>
@@ -221,6 +224,8 @@ export function JacketStructureScene() {
                 bRef={jointBodyRefs[slot.b]}
                 color={slot.kind === 'diagonal' ? '#f59e0b' : '#94a3b8'}
                 radius={0.05}
+                stiffness={60000}
+                damping={400}
               />
             )
           }
@@ -257,7 +262,7 @@ export function JacketStructureScene() {
             )
           })}
 
-        <TestRunnerConnected startPosRef={recordedStartRef} />
+        <TestRunnerConnected />
       </Physics>
 
       <OrbitControls enableRotate={false} enablePan={false} enableZoom minDistance={7} maxDistance={13} target={[2, 1.4, 0]} />
@@ -265,9 +270,36 @@ export function JacketStructureScene() {
   )
 }
 
-function TestRunnerConnected({ startPosRef }: { startPosRef: RefObject<Map<string, THREE.Vector3>> }) {
+/** current length of a bay's diagonal, or null if either joint body isn't ready yet */
+function diagonalLength(aId: string, bId: string): number | null {
+  const pa = jointBodyRefs[aId]?.current?.translation()
+  const pb = jointBodyRefs[bId]?.current?.translation()
+  if (!pa || !pb) return null
+  return Math.hypot(pb.x - pa.x, pb.y - pa.y)
+}
+
+/**
+ * How racked the worst bay is right now: the gap between a bay's two
+ * diagonal lengths (0 for an undeformed rectangle; large once it shears
+ * into a parallelogram). Self-referential (relative distances within the
+ * structure), so it doesn't care whether the whole frame has also swung or
+ * rotated as a rigid body - only genuine bay-level shear counts.
+ */
+function worstBayShear(): number {
+  let worst = 0
+  for (const bay of bays) {
+    const diagA = diagonalLength(bay.leftBottom, bay.rightTop)
+    const diagB = diagonalLength(bay.rightBottom, bay.leftTop)
+    if (diagA === null || diagB === null) continue
+    worst = Math.max(worst, Math.abs(diagA - diagB))
+  }
+  return worst
+}
+
+function TestRunnerConnected() {
   const timerRef = useRef(0)
-  const stageRef = useRef<'idle' | 'settling' | 'pushed' | 'done'>('idle')
+  const stageRef = useRef<'idle' | 'settling' | 'pushed' | 'releasing' | 'done'>('idle')
+  const maxShearRef = useRef(0)
 
   useFrame((_, delta) => {
     const phase = useGameStore.getState().structuralTestPhase
@@ -275,50 +307,53 @@ function TestRunnerConnected({ startPosRef }: { startPosRef: RefObject<Map<strin
     if (phase !== 'simulating') {
       stageRef.current = 'idle'
       timerRef.current = 0
+      maxShearRef.current = 0
       return
     }
 
     if (stageRef.current === 'idle') {
       stageRef.current = 'settling'
       timerRef.current = 0
+      maxShearRef.current = 0
     }
 
     timerRef.current += delta
 
     if (stageRef.current === 'settling' && timerRef.current >= 0.6) {
-      // baseline is the settled (post-gravity-sag) pose, so the drift
-      // check below measures deformation from the wave load only
-      for (const id of TOP_JOINT_IDS) {
-        const body = jointBodyRefs[id]?.current
-        if (!body) continue
-        const p = body.translation()
-        startPosRef.current.set(id, new THREE.Vector3(p.x, p.y, p.z))
-      }
       stageRef.current = 'pushed'
       timerRef.current = 0
     }
 
     if (stageRef.current === 'pushed') {
-      // a sustained, gentle push (like current/wave drag) rather than a
-      // sudden impulse - an instantaneous impulse causes shock-loading
-      // overshoot before the (deliberately soft, spring-based) joints can
-      // react, which reads as a false collapse regardless of bracing
+      // a brief push (like a wave hitting the structure) rather than an
+      // indefinite drag - every spring member has some give, so an
+      // open-ended sustained force keeps everything (braced or not)
+      // slowly swaying in the direction of the load, which swamps the
+      // actual signal: whether triangulated bays spring back once the
+      // load is gone, vs. an unbraced bay settling into a new, permanently
+      // racked shape
       for (const id of TOP_JOINT_IDS) {
         const body = jointBodyRefs[id]?.current
-        if (body) body.addForce({ x: 0.05, y: 0, z: 0 }, true)
+        if (body) body.addForce({ x: 0.3, y: 0, z: 0 }, true)
+      }
+      if (timerRef.current >= 0.35) {
+        stageRef.current = 'releasing'
+        timerRef.current = 0
       }
     }
 
-    if (stageRef.current === 'pushed' && timerRef.current >= 2.6) {
-      let maxDrift = 0
-      for (const id of TOP_JOINT_IDS) {
-        const body = jointBodyRefs[id]?.current
-        const start = startPosRef.current.get(id)
-        if (!body || !start) continue
-        const p = body.translation()
-        maxDrift = Math.max(maxDrift, Math.abs(p.x - start.x))
+    if (stageRef.current === 'releasing') {
+      // once the load is gone, let it settle, and watch for any racking
+      // that doesn't recover - a bay with no diagonal has nothing to pull
+      // it back into shape and stays deformed; a triangulated one springs
+      // back close to its original rectangle
+      if (timerRef.current >= 1.0) {
+        maxShearRef.current = Math.max(maxShearRef.current, worstBayShear())
       }
-      const passed = maxDrift < 2.5
+    }
+
+    if (stageRef.current === 'releasing' && timerRef.current >= 2.2) {
+      const passed = maxShearRef.current < 0.6
       stageRef.current = 'done'
       setTimeout(() => useGameStore.getState().reportStructuralTestResult(passed), 0)
     }
