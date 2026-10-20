@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Physics, RigidBody, useRapier, useSpringJoint, type RapierRigidBody } from '@react-three/rapier'
+import { Physics, RigidBody, useSpringJoint, type RapierRigidBody } from '@react-three/rapier'
 import { createRef, useEffect, useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import * as THREE from 'three'
@@ -36,38 +36,68 @@ function Seabed() {
   )
 }
 
+/**
+ * Renders the visible sphere for a joint, with its own position driven
+ * directly from the physics body every frame (like TrussMember) rather
+ * than relying on react-three-rapier's own mesh sync, which only runs
+ * inside its paused-gated step() - so it never reflects a position that
+ * was set manually (e.g. by ResetOnBuildingPhase) while paused.
+ */
+function JointVisual({ bodyRef, color, radius }: { bodyRef: RBRef; color: string; radius: number }) {
+  const meshRef = useRef<THREE.Mesh>(null)
+  useFrame(() => {
+    const body = bodyRef.current
+    const mesh = meshRef.current
+    if (!body || !mesh) return
+    const p = body.translation()
+    mesh.position.set(p.x, p.y, p.z)
+  })
+  return (
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[radius, 16, 16]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  )
+}
+
 function JointDot({ joint, bodyRef }: { joint: Joint; bodyRef: RBRef }) {
   const color = joint.anchored ? '#334155' : '#1d4ed8'
   if (joint.anchored) {
     return (
-      <RigidBody ref={bodyRef} type="fixed" position={jointPos(joint)} colliders={false}>
-        <mesh>
-          <sphereGeometry args={[0.1, 16, 16]} />
-          <meshStandardMaterial color={color} />
-        </mesh>
-      </RigidBody>
+      <>
+        {/* invisible: only here so colliders="ball"-equivalent sizing has a shape; anchored joints never move */}
+        <RigidBody ref={bodyRef} type="fixed" position={jointPos(joint)} colliders={false} />
+        <JointVisual bodyRef={bodyRef} color={color} radius={0.1} />
+      </>
     )
   }
   // the top two joints also carry the topside deck's weight
   const mass = TOP_JOINT_IDS.includes(joint.id) ? 0.6 : 0.08
   return (
-    <RigidBody
-      ref={bodyRef}
-      type="dynamic"
-      position={jointPos(joint)}
-      colliders="ball"
-      mass={mass}
-      linearDamping={1.2}
-      angularDamping={1.2}
-      additionalSolverIterations={20}
-      enabledTranslations={PLANE_TRANSLATIONS}
-      enabledRotations={PLANE_ROTATIONS}
-    >
-      <mesh>
-        <sphereGeometry args={[0.09, 16, 16]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    </RigidBody>
+    <>
+      <RigidBody
+        ref={bodyRef}
+        type="dynamic"
+        position={jointPos(joint)}
+        colliders="ball"
+        mass={mass}
+        linearDamping={1.2}
+        angularDamping={1.2}
+        additionalSolverIterations={20}
+        enabledTranslations={PLANE_TRANSLATIONS}
+        enabledRotations={PLANE_ROTATIONS}
+      >
+        {/* kept in the scene graph (not visible={false}) so automatic
+            collider sizing still picks it up - mass only takes effect via
+            a collider in this physics binding, so dropping it would
+            silently make the joint massless again */}
+        <mesh>
+          <sphereGeometry args={[0.09, 16, 16]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </RigidBody>
+      <JointVisual bodyRef={bodyRef} color={color} radius={0.09} />
+    </>
   )
 }
 
@@ -177,7 +207,6 @@ function findJoint(id: string) {
 function ResetOnBuildingPhase() {
   const phase = useGameStore((s) => s.structuralTestPhase)
   const wasBuilding = useRef(true)
-  const { step } = useRapier()
 
   useEffect(() => {
     if (phase === 'building' && !wasBuilding.current) {
@@ -185,21 +214,23 @@ function ResetOnBuildingPhase() {
         if (j.anchored) continue
         const body = jointBodyRefs[j.id]?.current
         if (!body) continue
+        // a body that's come to rest (e.g. settled toppled over) is put to
+        // sleep by the physics engine, which would otherwise ignore the
+        // reset below until something else wakes it up
+        body.wakeUp()
         body.setTranslation({ x: j.x, y: j.y, z: 0 }, true)
         body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true)
         body.setLinvel({ x: 0, y: 0, z: 0 }, true)
         body.setAngvel({ x: 0, y: 0, z: 0 }, true)
       }
-      // the physics bodies are now back at their design pose, but the
-      // visual meshes only get copied over from inside react-three-rapier's
-      // own step(), which is skipped while paused=true (which it is here,
-      // since we're back in 'building'). Call step() directly with a zero
-      // delta to force that one mesh sync without actually advancing
-      // physics time.
-      step(0)
+      // no manual physics step needed here: JointVisual and TrussMember
+      // both read live body.translation()/rotation() in their own
+      // useFrame every rendered frame, regardless of whether physics
+      // itself is paused, so they pick up this reset on the very next
+      // frame on their own
     }
     wasBuilding.current = phase === 'building'
-  }, [phase, step])
+  }, [phase])
 
   return null
 }
