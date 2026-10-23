@@ -30,7 +30,7 @@ export function OverviewHome() {
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-center pointer-events-none">
         <div className="bg-slate-900/85 text-white rounded-xl px-5 py-3 shadow-lg text-center">
           <p className="text-xs uppercase tracking-widest text-sky-300 font-semibold">
-            EPCI Builder
+            McDermott Kuala Lumpur - Bring Your Kids to Work Day
           </p>
           <p className="font-bold text-lg sm:text-xl leading-tight">
             A Whole Oil &amp; Gas Project, Bird's-Eye View
