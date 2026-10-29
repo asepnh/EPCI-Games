@@ -356,12 +356,11 @@ export function OverviewScene({ activeZoneId, onHover, onSelect }: OverviewScene
       <OrbitControls
         enablePan
         enableZoom
-        minDistance={30}
+        enableRotate={false}
+        minDistance={6}
         maxDistance={58}
-        minPolarAngle={0.5}
-        maxPolarAngle={0.85}
-        minAzimuthAngle={-Math.PI / 5}
-        maxAzimuthAngle={Math.PI / 5}
+        mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+        touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }}
         target={[2, 0, 0]}
       />
     </Canvas>
