@@ -6,7 +6,7 @@ export function StageIntro({ stage }: { stage: StageDef }) {
   const restart = useGameStore((s) => s.restart)
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6">
+    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6 z-20">
       <button
         onClick={restart}
         title="Back to home"
