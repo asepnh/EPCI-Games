@@ -12,6 +12,8 @@ export interface OverviewZone {
   size: [number, number]
   /** clicking this zone jumps straight into this stage's minigame */
   stageKey: StageDef['key']
+  /** for the Installation stage only: which half to jump into (defaults to 'loadout') */
+  installSubPhase?: 'loadout' | 'site'
 }
 
 export const overviewZones: OverviewZone[] = [
@@ -64,5 +66,6 @@ export const overviewZones: OverviewZone[] = [
     center: [15, 0],
     size: [6.5, 6.5],
     stageKey: 'installation',
+    installSubPhase: 'site',
   },
 ]

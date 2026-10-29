@@ -16,7 +16,7 @@ export function OverviewHome() {
 
   const enterZone = (id: string) => {
     const zone = overviewZones.find((z) => z.id === id)
-    if (zone) goToStage(zone.stageKey)
+    if (zone) goToStage(zone.stageKey, zone.installSubPhase)
   }
 
   return (

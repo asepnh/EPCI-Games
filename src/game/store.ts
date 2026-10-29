@@ -47,8 +47,12 @@ interface GameState {
   structuralTestPhase: 'building' | 'simulating' | 'passed' | 'failed'
 
   startGame: () => void
-  /** jump straight into a specific stage's minigame, skipping earlier stages */
-  goToStage: (stageKey: StageDef['key']) => void
+  /**
+   * jump straight into a specific stage's minigame, skipping earlier
+   * stages. For the Installation stage, optionally jump straight into 4b
+   * (offshore install) instead of starting at 4a (load-out).
+   */
+  goToStage: (stageKey: StageDef['key'], installSubPhase?: 'loadout' | 'site') => void
   beginStage: () => void
   selectSlot: (slotId: string | null) => void
   placeItem: (itemId: string) => void
@@ -96,7 +100,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   startGame: () =>
     set({ phase: 'stage-intro', stageIndex: 0, placements: {}, completedStageIds: [] }),
 
-  goToStage: (stageKey) => {
+  goToStage: (stageKey, installSubPhase = 'loadout') => {
     const stageIndex = stages.findIndex((s) => s.key === stageKey)
     if (stageIndex === -1) return
     set({
@@ -110,7 +114,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
-      installationSubPhase: 'loadout',
+      installationSubPhase: installSubPhase,
       installProgress: 0,
       structuralBraces: [],
       structuralTestPhase: 'building',
@@ -125,7 +129,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
-      installationSubPhase: 'loadout',
+      // installationSubPhase is deliberately left as-is here: goToStage is
+      // what decides whether this stage starts at 4a or jumps straight to
+      // 4b, and that choice has already been made by the time this runs
       installProgress: 0,
       structuralBraces: [],
       structuralTestPhase: 'building',
