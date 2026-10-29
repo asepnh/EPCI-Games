@@ -4,6 +4,7 @@ import type { StageDef } from './data/types'
 import { assemblyTracks } from './data/construction'
 import { puzzlePieces, resolvedCells, fitsOnBarge, type Cell } from './data/packing'
 import { STICK_BUDGET, structuralFacts } from './data/structural'
+import { installSiteSteps } from './data/installationSite'
 
 export type ScreenPhase = 'start' | 'stage-intro' | 'playing' | 'stage-complete' | 'finished'
 
@@ -32,10 +33,14 @@ interface GameState {
   /** mode: 'assembly' (Construction) - steps completed per track */
   assemblyProgress: Record<'jacket' | 'topside', number>
 
-  /** mode: 'packing' (Installation) */
+  /** mode: 'packing' (Installation) - 4a: load the barge */
   packingPlacements: Record<string, PackingPlacement>
   selectedPieceId: string | null
   selectedRotation: number
+  /** mode: 'packing' (Installation) - which half of the stage we're in: 4a load-out or 4b offshore site */
+  installationSubPhase: 'loadout' | 'site'
+  /** mode: 'packing' (Installation) - 4b: offshore installation steps completed */
+  installProgress: number
 
   /** mode: 'structural' (Engineering) */
   structuralBraces: string[]
@@ -59,6 +64,8 @@ interface GameState {
   /** pick a placed piece back up off the barge so it can be repositioned */
   unplacePiece: (pieceId: string) => void
 
+  attemptInstallStep: (stepId: string) => void
+
   toggleBrace: (slotId: string) => void
   startStabilityTest: () => void
   reportStructuralTestResult: (passed: boolean) => void
@@ -80,6 +87,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   packingPlacements: {},
   selectedPieceId: null,
   selectedRotation: 0,
+  installationSubPhase: 'loadout',
+  installProgress: 0,
 
   structuralBraces: [],
   structuralTestPhase: 'building',
@@ -101,6 +110,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      installationSubPhase: 'loadout',
+      installProgress: 0,
       structuralBraces: [],
       structuralTestPhase: 'building',
     })
@@ -114,6 +125,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      installationSubPhase: 'loadout',
+      installProgress: 0,
       structuralBraces: [],
       structuralTestPhase: 'building',
     }),
@@ -170,6 +183,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       packingPlacements: {},
       selectedPieceId: null,
       selectedRotation: 0,
+      installationSubPhase: 'loadout',
+      installProgress: 0,
       structuralBraces: [],
       structuralTestPhase: 'building',
     }),
@@ -237,15 +252,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       [selectedPieceId]: { rotation: selectedRotation, anchorRow: row, anchorCol: col },
     }
     const allPlaced = puzzlePieces.every((p) => nextPlacements[p.id] !== undefined)
-    const stage = stages[get().stageIndex]
 
     set((s) => ({
       packingPlacements: nextPlacements,
       selectedPieceId: null,
       selectedRotation: 0,
       activeFact: { itemName: piece.name, fact: piece.fact, correct: true },
-      phase: allPlaced ? 'stage-complete' : 'playing',
-      completedStageIds: allPlaced ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
+      // loading the barge (4a) is only half the Installation stage - once
+      // every piece is loaded, move on to the offshore install steps (4b)
+      // rather than completing the stage here
+      installationSubPhase: allPlaced ? 'site' : s.installationSubPhase,
     }))
     return true
   },
@@ -256,6 +272,38 @@ export const useGameStore = create<GameState>((set, get) => ({
     const next = { ...packingPlacements }
     delete next[pieceId]
     set({ packingPlacements: next, selectedPieceId: pieceId, selectedRotation: 0 })
+  },
+
+  attemptInstallStep: (stepId) => {
+    const { installProgress } = get()
+    const stepIndex = installSiteSteps.findIndex((s) => s.id === stepId)
+    if (stepIndex !== installProgress) {
+      // wrong order: either already done, or trying to skip ahead
+      const step = installSiteSteps[stepIndex]
+      set({
+        activeFact: {
+          itemName: step.name,
+          fact:
+            stepIndex < installProgress
+              ? `"${step.name}" is already done!`
+              : `Not yet - complete "${installSiteSteps[installProgress].name}" first.`,
+          correct: false,
+        },
+      })
+      return
+    }
+
+    const step = installSiteSteps[stepIndex]
+    const nextProgress = installProgress + 1
+    const allDone = nextProgress === installSiteSteps.length
+    const stage = stages[get().stageIndex]
+
+    set((s) => ({
+      installProgress: nextProgress,
+      activeFact: { itemName: step.name, fact: step.fact, correct: true },
+      phase: allDone ? 'stage-complete' : 'playing',
+      completedStageIds: allDone ? [...new Set([...s.completedStageIds, stage.id])] : s.completedStageIds,
+    }))
   },
 
   toggleBrace: (slotId) => {

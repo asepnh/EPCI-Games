@@ -7,9 +7,11 @@ interface HudProps {
   done: number
   total: number
   completedStageIds: string[]
+  /** small line under the stage title, e.g. to call out which half of a split stage is active */
+  subLabel?: string
 }
 
-export function Hud({ stage, done, total, completedStageIds }: HudProps) {
+export function Hud({ stage, done, total, completedStageIds, subLabel }: HudProps) {
   const restart = useGameStore((s) => s.restart)
 
   return (
@@ -32,6 +34,7 @@ export function Hud({ stage, done, total, completedStageIds }: HudProps) {
         <p className="font-bold text-lg leading-tight" style={{ color: stage.accentColor }}>
           {stage.title}
         </p>
+        {subLabel && <p className="text-xs text-white/70 font-semibold mt-0.5">{subLabel}</p>}
       </div>
 
       <div className="flex-1 flex items-center gap-2 bg-slate-900/85 text-white rounded-xl px-4 py-2.5 shadow-lg pointer-events-auto">

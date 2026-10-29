@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { IsometricScene } from './game/components/IsometricScene'
 import { assemblyTracks } from './game/data/construction'
+import { installSiteSteps } from './game/data/installationSite'
 import { puzzlePieces } from './game/data/packing'
 import { stages } from './game/data/stages'
 import { STICK_BUDGET } from './game/data/structural'
@@ -9,6 +10,7 @@ import { AssemblyGame } from './game/ui/AssemblyGame'
 import { FactPopup } from './game/ui/FactPopup'
 import { FinishedScreen } from './game/ui/FinishedScreen'
 import { Hud } from './game/ui/Hud'
+import { InstallationSiteGame } from './game/ui/InstallationSiteGame'
 import { ItemPalette } from './game/ui/ItemPalette'
 import { JacketBuilderGame } from './game/ui/JacketBuilderGame'
 import { OverviewHome } from './game/ui/OverviewHome'
@@ -27,6 +29,8 @@ function App() {
   const activeFact = useGameStore((s) => s.activeFact)
   const assemblyProgress = useGameStore((s) => s.assemblyProgress)
   const packingPlacements = useGameStore((s) => s.packingPlacements)
+  const installationSubPhase = useGameStore((s) => s.installationSubPhase)
+  const installProgress = useGameStore((s) => s.installProgress)
   const completedStageIds = useGameStore((s) => s.completedStageIds)
   const structuralBraces = useGameStore((s) => s.structuralBraces)
 
@@ -62,8 +66,12 @@ function App() {
     total = TOTAL_ASSEMBLY_STEPS
     done = assemblyProgress.jacket + assemblyProgress.topside
   } else if (stage.mode === 'packing') {
-    total = puzzlePieces.length
-    done = Object.keys(packingPlacements).length
+    // the Installation stage has two halves: 4a load the barge, 4b install offshore
+    total = puzzlePieces.length + installSiteSteps.length
+    done =
+      installationSubPhase === 'loadout'
+        ? Object.keys(packingPlacements).length
+        : puzzlePieces.length + installProgress
   } else if (stage.mode === 'structural') {
     total = STICK_BUDGET
     done = structuralBraces.length
@@ -86,11 +94,24 @@ function App() {
       )}
 
       {stage.mode === 'assembly' && <AssemblyGame />}
-      {stage.mode === 'packing' && <PackingGame />}
+      {stage.mode === 'packing' && installationSubPhase === 'loadout' && <PackingGame />}
+      {stage.mode === 'packing' && installationSubPhase === 'site' && <InstallationSiteGame />}
       {stage.mode === 'structural' && <JacketBuilderGame />}
 
       {phase !== 'stage-intro' && (
-        <Hud stage={stage} done={done} total={total} completedStageIds={completedStageIds} />
+        <Hud
+          stage={stage}
+          done={done}
+          total={total}
+          completedStageIds={completedStageIds}
+          subLabel={
+            stage.mode === 'packing'
+              ? installationSubPhase === 'loadout'
+                ? '4a. Load-Out & Barge'
+                : '4b. Offshore Installation'
+              : undefined
+          }
+        />
       )}
 
       {phase === 'stage-intro' && <StageIntro stage={stage} />}
